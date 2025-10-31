@@ -196,11 +196,20 @@ function DashboardContent() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value.trim())}
                 />
-                <Button type="submit" disabled={!valid || loading}>
+                <Button type="submit" disabled={!valid || loading} size="md">
                   {loading ? 'Loading...' : 'Search'}
                 </Button>
               </form>
-              <WalletMultiButton className="!bg-primary !text-primary-foreground hover:!bg-primary/90 !h-10 !px-4 !rounded-lg" />
+              <WalletMultiButton 
+                style={{ 
+                  height: '40px', 
+                  minHeight: '40px', 
+                  maxHeight: '40px',
+                  background: 'rgba(44, 200, 239, 0.95)',
+                  color: 'rgb(49, 54, 52)'
+                }}
+                className="hover:!bg-primary/30 !h-10 !px-4 !py-2 !rounded-lg !font-medium !inline-flex !items-center !justify-center !transition-colors !text-base !border-0" 
+              />
             </div>
             {error && <p className="text-destructive text-sm mt-2">{error}</p>}
             {profile?.address && (
@@ -497,7 +506,7 @@ function DashboardContent() {
 
         {/* View Insights CTA */}
         {profile && (
-          <Card className="border-border border-primary">
+          <Card className="border-border border-primary border-1">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>

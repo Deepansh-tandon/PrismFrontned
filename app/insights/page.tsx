@@ -10,6 +10,31 @@ import Recommendations from '@/components/Recommendations';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Simple markdown renderer for API responses
+const renderMarkdown = (text: string) => {
+  if (!text) return text;
+  
+  // Remove AI preamble text (common patterns)
+  let cleaned = text
+    .replace(/^Okay,?\s*here'?s?\s+a\s+bio\s+for\s+the\s+crypto\s+wallet.*?:\s*/i, '')
+    .replace(/^Here'?s?\s+a\s+.*?:\s*/i, '')
+    .replace(/^Based\s+on\s+the\s+provided\s+information.*?:\s*/i, '')
+    .replace(/^\d+\.\s*(?:Tagline|Story|Bio):\s*/gim, '') // Remove "1. Tagline:", "2. Story:" etc
+    .replace(/^(?:Address|Total Transactions|Portfolio Age|Badges|Timeline|Bio):\s*.*?\n/gim, '') // Remove metadata lines
+    .trim();
+  
+  // Convert **text** to bold
+  let rendered = cleaned.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+  
+  // Convert *text* to italic
+  rendered = rendered.replace(/\*(.+?)\*/g, '<em class="italic">$1</em>');
+  
+  // Convert line breaks
+  rendered = rendered.replace(/\n/g, '<br />');
+  
+  return rendered;
+};
+
 function InsightsContent() {
   const searchParams = useSearchParams();
   const addressParam = searchParams.get('address');
@@ -96,10 +121,112 @@ function InsightsContent() {
     };
   }, [profile?.address]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Story Skeleton */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="h-6 w-40 bg-muted rounded animate-pulse"></div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 rounded-lg bg-muted border border-border">
+                    <div className="h-6 bg-background rounded animate-pulse w-3/4 mx-auto"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded animate-pulse w-full"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse w-5/6"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse w-4/5"></div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-border">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i}>
+                        <div className="h-3 bg-muted rounded animate-pulse w-20 mb-2"></div>
+                        <div className="h-5 bg-muted rounded animate-pulse w-16"></div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Analysis Skeleton */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="h-6 w-40 bg-muted rounded animate-pulse"></div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-3 rounded-lg bg-muted border border-border">
+                    <div className="h-4 bg-background rounded animate-pulse w-full"></div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-4 rounded-lg border border-border bg-card">
+                        <div className="h-3 bg-muted rounded animate-pulse w-20 mb-3"></div>
+                        <div className="space-y-2">
+                          <div className="h-3 bg-muted rounded animate-pulse w-full"></div>
+                          <div className="h-3 bg-muted rounded animate-pulse w-5/6"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Badges Skeleton */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="p-4 rounded-lg border border-border bg-card">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-muted animate-pulse"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-muted rounded animate-pulse w-32"></div>
+                            <div className="h-3 bg-muted rounded animate-pulse w-full"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar Skeleton */}
+            <aside className="space-y-4">
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="h-6 w-32 bg-muted rounded animate-pulse"></div>
+                  <div className="h-3 w-24 bg-muted rounded animate-pulse mt-2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-4 rounded-lg border border-border bg-card">
+                        <div className="h-3 bg-muted rounded animate-pulse w-full mb-3"></div>
+                        <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!profile && !loading) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Card className="border-border">
             <CardContent className="pt-6">
               <div className="text-center py-12">
@@ -127,22 +254,20 @@ function InsightsContent() {
             {/* AI Story & Profile */}
             {profile?.bioData?.ai && (
               <Card className="border-border">
-                <CardHeader>
+                <CardHeader className='bg-neutral-800 p-4 m-4 rounded-lg border border-primary/40'>
                   <CardTitle className="text-foreground">Your Trading Story</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    AI-generated profile based on your on-chain activity and portfolio
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {profile.bioData.ai.aiTagline && (
-                    <div className="p-4 rounded-lg bg-muted border border-border">
-                      <p className="text-lg font-semibold text-foreground text-center">
-                        {profile.bioData.ai.aiTagline}
-                      </p>
-                    </div>
-                  )}
+                
                   {profile.bioData.ai.aiStory && (
                     <div>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        {profile.bioData.ai.aiStory}
-                      </p>
+                      <p 
+                        className="text-sm text-foreground leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(profile.bioData.ai.aiStory) }}
+                      />
                     </div>
                   )}
                   {profile.bioData.stats && (
@@ -195,8 +320,14 @@ function InsightsContent() {
                           <div className="w-3 h-3 rounded-full bg-primary"></div>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-foreground">{milestone.label}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{milestone.description}</p>
+                          <p 
+                            className="text-sm font-semibold text-foreground"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(milestone.label) }}
+                          />
+                          <p 
+                            className="text-xs text-muted-foreground mt-1"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(milestone.description) }}
+                          />
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(milestone.date).toLocaleDateString()} at {new Date(milestone.date).toLocaleTimeString()}
                           </p>
@@ -218,9 +349,10 @@ function InsightsContent() {
                   {/* Contextual Insight */}
                   {summary.ai.contextualInsight && (
                     <div className="p-3 rounded-lg bg-muted border border-border">
-                      <p className="text-sm text-foreground font-medium">
-                        {summary.ai.contextualInsight}
-                      </p>
+                      <p 
+                        className="text-sm text-foreground font-medium"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.ai.contextualInsight) }}
+                      />
                     </div>
                   )}
 
@@ -232,7 +364,11 @@ function InsightsContent() {
                         <p className="text-xs font-semibold text-green-600 mb-3">Strengths</p>
                         <ul className="space-y-2">
                           {(summary.ai.aiStrengths || summary.strengths).map((item: string, i: number) => (
-                            <li key={i} className="text-xs text-foreground leading-relaxed pl-3 border-l-2 border-green-600">{item}</li>
+                            <li 
+                              key={i} 
+                              className="text-xs text-foreground leading-relaxed pl-3 border-l-2 border-green-600"
+                              dangerouslySetInnerHTML={{ __html: renderMarkdown(item) }}
+                            />
                           ))}
                         </ul>
                       </div>
@@ -244,7 +380,11 @@ function InsightsContent() {
                         <p className="text-xs font-semibold text-orange-600 mb-3">Areas to Improve</p>
                         <ul className="space-y-2">
                           {(summary.ai.aiWeaknesses || summary.weaknesses).map((item: string, i: number) => (
-                            <li key={i} className="text-xs text-foreground leading-relaxed pl-3 border-l-2 border-orange-600">{item}</li>
+                            <li 
+                              key={i} 
+                              className="text-xs text-foreground leading-relaxed pl-3 border-l-2 border-orange-600"
+                              dangerouslySetInnerHTML={{ __html: renderMarkdown(item) }}
+                            />
                           ))}
                         </ul>
                       </div>
@@ -256,7 +396,11 @@ function InsightsContent() {
                         <p className="text-xs font-semibold text-primary mb-3">Suggestions</p>
                         <ul className="space-y-2">
                           {(summary.ai.aiRecommendations || summary.recommendations).map((item: string, i: number) => (
-                            <li key={i} className="text-xs text-foreground leading-relaxed pl-3 border-l-2 border-primary">{item}</li>
+                            <li 
+                              key={i} 
+                              className="text-xs text-foreground leading-relaxed pl-3 border-l-2 border-primary"
+                              dangerouslySetInnerHTML={{ __html: renderMarkdown(item) }}
+                            />
                           ))}
                         </ul>
                       </div>
@@ -273,9 +417,10 @@ function InsightsContent() {
                         View Complete Analysis
                       </summary>
                       <div className="mt-3 p-4 rounded-lg bg-muted border border-border">
-                        <p className="text-xs text-foreground leading-relaxed whitespace-pre-line">
-                          {summary.ai.raw}
-                        </p>
+                        <p 
+                          className="text-xs text-foreground leading-relaxed whitespace-pre-line"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.ai.raw) }}
+                        />
                       </div>
                     </details>
                   )}
@@ -304,13 +449,15 @@ function InsightsContent() {
                               </svg>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground">
-                                {b.name}
-                              </p>
+                              <p 
+                                className="text-sm font-semibold text-foreground"
+                                dangerouslySetInnerHTML={{ __html: renderMarkdown(b.name) }}
+                              />
                               {b.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {b.description}
-                                </p>
+                                <p 
+                                  className="text-xs text-muted-foreground mt-1"
+                                  dangerouslySetInnerHTML={{ __html: renderMarkdown(b.description) }}
+                                />
                               )}
                             </div>
                           </div>
@@ -321,9 +468,10 @@ function InsightsContent() {
                     {profile?.bioData?.tagline && (
                       <div className="pt-4 border-t border-border">
                         <p className="text-xs text-muted-foreground mb-2">Trader Type</p>
-                        <p className="text-sm font-medium text-foreground italic">
-                          "{profile.bioData.tagline}"
-                        </p>
+                        <p 
+                          className="text-sm font-medium text-foreground italic"
+                          dangerouslySetInnerHTML={{ __html: `"${renderMarkdown(profile.bioData.tagline)}"` }}
+                        />
                       </div>
                     )}
                   </>
