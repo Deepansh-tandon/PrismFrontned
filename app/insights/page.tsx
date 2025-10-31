@@ -10,17 +10,31 @@ import Recommendations from '@/components/Recommendations';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Parse AI raw response to extract tagline and story
+const parseAIRaw = (raw: string): { tagline: string; story: string } => {
+  if (!raw) return { tagline: '', story: '' };
+  
+  // Extract tagline - look for "1. Tagline:" or "**1. Tagline:**" pattern
+  const taglineMatch = raw.match(/\*?\*?\d+\.\s*Tagline:\*?\*?\s*(.+?)(?=\n|$)/i);
+  let tagline = taglineMatch ? taglineMatch[1].trim() : '';
+  
+  // Extract story - look for "2. Story:" pattern and get everything until "Explanation" or other metadata
+  // Using [\s\S] instead of dotAll flag for ES5 compatibility
+  const storyMatch = raw.match(/\*?\*?\d+\.\s*Story:\*?\*?\s*([\s\S]+?)(?=\n\n\*?\*?(?:Explanation|Address|Total|Portfolio|Badges|Timeline|Bio:)|$)/i);
+  let story = storyMatch ? storyMatch[1].trim() : '';
+  
+  return { tagline, story };
+};
+
 // Simple markdown renderer for API responses
 const renderMarkdown = (text: string) => {
   if (!text) return text;
   
   // Remove AI preamble text (common patterns)
   let cleaned = text
-    .replace(/^Okay,?\s*here'?s?\s+a\s+bio\s+for\s+the\s+crypto\s+wallet.*?:\s*/i, '')
+    .replace(/^Okay,?\s*here'?s?\s+a\s+bio.*?:\s*/i, '')
     .replace(/^Here'?s?\s+a\s+.*?:\s*/i, '')
     .replace(/^Based\s+on\s+the\s+provided\s+information.*?:\s*/i, '')
-    .replace(/^\d+\.\s*(?:Tagline|Story|Bio):\s*/gim, '') // Remove "1. Tagline:", "2. Story:" etc
-    .replace(/^(?:Address|Total Transactions|Portfolio Age|Badges|Timeline|Bio):\s*.*?\n/gim, '') // Remove metadata lines
     .trim();
   
   // Convert **text** to bold
@@ -226,7 +240,7 @@ function InsightsContent() {
   if (!profile && !loading) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <Card className="border-border">
             <CardContent className="pt-6">
               <div className="text-center py-12">
@@ -252,24 +266,37 @@ function InsightsContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             {/* AI Story & Profile */}
-            {profile?.bioData?.ai && (
-              <Card className="border-border">
-                <CardHeader className='bg-neutral-800 p-4 m-4 rounded-lg border border-primary/40'>
-                  <CardTitle className="text-foreground">Your Trading Story</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    AI-generated profile based on your on-chain activity and portfolio
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                
-                  {profile.bioData.ai.aiStory && (
-                    <div>
-                      <p 
-                        className="text-sm text-foreground leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdown(profile.bioData.ai.aiStory) }}
-                      />
-                    </div>
-                  )}
+            {profile?.bioData?.ai && (() => {
+              // Parse raw data to get tagline and story
+              const parsed = parseAIRaw(profile.bioData.ai.raw || '');
+              const tagline = parsed.tagline || profile.bioData.ai.aiTagline;
+              const story = parsed.story || profile.bioData.ai.aiStory;
+              
+              return (
+                <Card className="border-border">
+                  <CardHeader className=' p-4 m-4 rounded-lg border '>
+                    <CardTitle className="text-foreground">Your Trading Story</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      AI-generated profile based on your on-chain activity and portfolio
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {tagline && (
+                      <div className="p-4 rounded-lg bg-muted border border-primary/40">
+                        <p 
+                          className="text-lg font-medium text-foreground text-center"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(tagline) }}
+                        />
+                      </div>
+                    )}
+                    {story && (
+                      <div>
+                        <p 
+                          className="text-sm text-foreground leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(story) }}
+                        />
+                      </div>
+                    )}
                   {profile.bioData.stats && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-border">
                       <div>
@@ -304,7 +331,8 @@ function InsightsContent() {
                   )}
                 </CardContent>
               </Card>
-            )}
+              );
+            })()}
 
             {/* Journey Timeline */}
             {profile?.bioData?.timeline && profile.bioData.timeline.length > 0 && (
